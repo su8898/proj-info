@@ -158,6 +158,18 @@ let ``sample7 Oldsdk projs`` =
           ProjectReferences = [] }
       ] }
 
+/// legacy framework net461 console project
+/// reference:
+/// - net461 lib Project1A (F#)
+let ``sample7 legacy framework project`` =
+    { ProjDir = "sample7-oldsdk-projs"
+      AssemblyName = "Project1A"
+      ProjectFile = "a"/"Project1A.fsproj"
+      TargetFrameworks =  Map.ofList [
+        "net45", sourceFiles ["Project1A.fs"]
+      ]
+      ProjectReferences = [] }
+
 /// dotnet sdk, one netstandard2.0 lib n1 with advanced solution explorer configurations
 let ``sample8 NetSdk Explorer`` =
   { ProjDir = "sample8-netsdk-explorer"

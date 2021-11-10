@@ -138,6 +138,48 @@ module ExpectNotification =
     let watchNotifications logger loader =
         NotificationWatcher(loader, logNotification logger)
 
+let testLegacyFrameworkProject toolsPath workspaceLoader isRelease (workspaceFactory: ToolsPath * (string * string) list -> IWorkspaceLoader) =
+    testCase
+    |> withLog
+        (sprintf "can load legacy project - %s - isRelease is %b" workspaceLoader isRelease)
+        (fun logger fs ->
+
+            let testDir = inDir fs "a"
+            copyDirFromAssets fs ``sample7 legacy framework project``.ProjDir testDir
+
+            let projPath = testDir / (``sample7 legacy framework project``.ProjectFile)
+            let projDir = Path.GetDirectoryName projPath
+
+            let config =
+                if isRelease then
+                    "Release"
+                else
+                    "Debug"
+
+            let props = [ ("Configuration", config) ]
+            let loader = workspaceFactory (toolsPath, props)
+
+            let watcher = watchNotifications logger loader
+
+            let parsed = loader.LoadProjects [ projPath ] |> Seq.toList
+
+            [ loading projPath
+              loaded projPath ]
+            |> expectNotifications watcher.Notifications
+
+            let [ _; WorkspaceProjectState.Loaded (n1Loaded, _, _) ] = watcher.Notifications
+
+            let n1Parsed = parsed |> expectFind projPath "first is a lib"
+
+            let expectedSources =
+                [ projDir / "Project1A.fs" ]
+                |> List.map Path.GetFullPath
+
+            Expect.equal parsed.Length 1 "console and lib"
+            Expect.equal n1Parsed n1Loaded "notificaton and parsed should be the same"
+            Expect.equal n1Parsed.SourceFiles expectedSources "check sources"
+            )
+
 let testSample2 toolsPath workspaceLoader isRelease (workspaceFactory: ToolsPath * (string * string) list -> IWorkspaceLoader) =
     testCase
     |> withLog
@@ -1042,4 +1084,5 @@ let tests toolsPath =
           test "can get sdks" {
               let sdks = SdkDiscovery.sdks Paths.dotnetRoot
               Expect.isNonEmpty sdks "should have found at least the currently-executing sdk"
-          } ]
+          }
+          testLegacyFrameworkProject toolsPath "can load legacy project file" false (fun (tools, props) -> WorkspaceLoader.Create(tools, globalProperties = props)) ]

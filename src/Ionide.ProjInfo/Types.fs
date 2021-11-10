@@ -67,7 +67,9 @@ module Types =
           FullPath: string
           Link: string option }
 
-    type ToolsPath = ToolsPath of string
+    type ToolsPath =
+        { DotnetExePath: string
+          MsBuildPath: Option<string> }
 
 
     type GetProjectOptionsErrors =
